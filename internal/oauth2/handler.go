@@ -85,7 +85,7 @@ func (p *Provider) oauth2Start() http.Handler {
 
 		authorizeParams := p.authorizeParams
 		if p.conf.OAuth2.Nonce {
-			authorizeParams = append(authorizeParams, rp.WithURLParam("nonce", p.GetNonce(session.Client.Cid)))
+			authorizeParams = append(authorizeParams, rp.WithURLParam("nonce", p.GetNonce(session.Client.SessionID)))
 		}
 
 		rp.AuthURLHandler(func() string {
@@ -152,12 +152,13 @@ func (p *Provider) oauth2Callback() http.Handler {
 		logger := p.logger.With(
 			slog.Uint64("cid", session.Client.Cid),
 			slog.Uint64("kid", session.Client.Kid),
+			slog.String("session_id", session.Client.SessionID),
 			slog.String("common_name", session.CommonName),
 		)
 		ctx = logging.ToContext(ctx, log.NewZitadelLogger(logger))
 
 		if p.conf.OAuth2.Nonce {
-			ctx = context.WithValue(ctx, types.CtxNonce{}, p.GetNonce(session.Client.Cid))
+			ctx = context.WithValue(ctx, types.CtxNonce{}, p.GetNonce(session.Client.SessionID))
 			r = r.WithContext(ctx)
 		}
 
@@ -196,13 +197,13 @@ func (p *Provider) oauth2Callback() http.Handler {
 
 			logger.Info("successful authorization via oauth2")
 
-			p.openvpn.AcceptClient(logger, session.Client, getAuthTokenUsername(session, user))
+			go p.openvpn.AcceptClient(logger, session.Client, getAuthTokenUsername(session, user))
 
 			if p.conf.OAuth2.Refresh.Enabled {
 				refreshToken := p.OIDC.GetRefreshToken(tokens)
 				if refreshToken == "" {
 					p.logger.Warn("oauth2.refresh is enabled, but provider does not return refresh token")
-				} else if err = p.storage.Set(session.Client.Cid, refreshToken); err != nil {
+				} else if err = p.storage.Set(session.Client.SessionID, refreshToken); err != nil {
 					logger.Warn(err.Error())
 				}
 			}
@@ -238,7 +239,7 @@ func writeError(w http.ResponseWriter, logger *slog.Logger, conf config.Config, 
 
 	err := conf.HTTP.CallbackTemplate.Execute(w, map[string]string{
 		"title":   "Access denied",
-		"message": fmt.Sprintf("Error ID: %s\nPlease contact your administrator for help.", errorID),
+		"message": fmt.Sprintf("Error ID: %s\nPlease contact your administrator for help.<br /> %s", errorID, errorType),
 		"success": "false",
 	})
 	if err != nil {

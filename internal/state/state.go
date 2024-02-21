@@ -23,6 +23,7 @@ type State struct {
 type ClientIdentifier struct {
 	Cid                  uint64
 	Kid                  uint64
+	SessionID            string
 	AuthFailedReasonFile string
 	AuthControlFile      string
 }

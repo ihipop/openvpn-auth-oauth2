@@ -9,12 +9,14 @@ import (
 )
 
 type Client struct {
-	Kid        uint64
-	Cid        uint64
-	Reason     string
-	IPAddr     string
-	CommonName string
-	IvSSO      string
+	Kid          uint64
+	Cid          uint64
+	Reason       string
+	IPAddr       string
+	CommonName   string
+	SessionID    string
+	SessionState string
+	IvSSO        string
 }
 
 func NewClient(conf config.Config, message string) (Client, error) { //nolint:cyclop
@@ -52,6 +54,10 @@ func NewClient(conf config.Config, message string) (Client, error) { //nolint:cy
 				client.CommonName = envValue
 			case "IV_SSO":
 				client.IvSSO = envValue
+			case "session_id":
+				client.SessionID = envValue
+			case "session_state":
+				client.SessionState = envValue
 			}
 		}
 	}

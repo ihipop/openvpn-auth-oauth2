@@ -3,7 +3,6 @@ package oauth2
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"log/slog"
@@ -247,11 +246,11 @@ func errorHandler(
 	writeError(w, logger, conf, httpStatus, errorType, errorDesc)
 }
 
-func (p *Provider) GetNonce(clientID uint64) string {
-	bs := make([]byte, 8, 8+len(p.conf.HTTP.Secret.String()))
-	binary.LittleEndian.PutUint64(bs, clientID)
-
-	nonce := sha256.Sum256(append(bs, p.conf.HTTP.Secret.String()...))
+func (p *Provider) GetNonce(id string) string {
+	bs := make([]byte, 0, len(id)+len(p.conf.HTTP.Secret.String()))
+	bs = append(bs, []byte(id)...)
+	bs = append(bs, p.conf.HTTP.Secret.String()...)
+	nonce := sha256.Sum256(bs)
 
 	return hex.EncodeToString(nonce[:])
 }
