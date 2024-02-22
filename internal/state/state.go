@@ -63,6 +63,7 @@ func (state *State) Decode(secretKey string) error {
 		&state.Client.Kid,
 		&state.Client.AuthFailedReasonFile,
 		&state.Client.AuthControlFile,
+		&state.Client.SessionID,
 		&state.Ipaddr,
 		&state.CommonName,
 		&state.Issued,
@@ -98,7 +99,9 @@ func (state *State) Encode(secretKey string) error {
 	data.WriteString(" ")
 	data.WriteString(encodeString(state.Client.AuthControlFile))
 	data.WriteString(" ")
-	data.WriteString(state.Ipaddr)
+	data.WriteString(encodeString(state.Client.SessionID))
+	data.WriteString(" ")
+	data.WriteString(encodeString(state.Ipaddr))
 	data.WriteString(" ")
 	data.WriteString(encodeString(state.CommonName))
 	data.WriteString(" ")
