@@ -112,12 +112,13 @@ func (c *Client) checkAuthBypass(logger *slog.Logger, client connection.Client) 
 func (c *Client) checkAuthSessionState(logger *slog.Logger, client connection.Client) bool {
 	stateValid := client.SessionState == "AuthenticatedEmptyUser" || client.SessionState == "Authenticated"
 
-	if client.SessionID != "" {
-		logger.Info(fmt.Sprintf("client session is %s@%s ", client.SessionID, client.SessionState))
-	} else {
+	if client.SessionID == "" {
 		c.DenyClient(logger, state.ClientIdentifier{Cid: client.Cid, Kid: client.Kid}, "AuthSession is required")
+
 		return true
 	}
+
+	logger.Info(fmt.Sprintf("client session is %s@%s ", client.SessionID, client.SessionState))
 
 	if stateValid {
 		c.AcceptClient(logger, state.ClientIdentifier{Cid: client.Cid, Kid: client.Kid}, client.CommonName)
